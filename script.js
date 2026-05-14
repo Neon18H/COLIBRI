@@ -1,330 +1,195 @@
-// ===============================
-// CONFIGURACIÓN EDITABLE
-// ===============================
-// Cambia estas respuestas o textos de forma sencilla.
-const SECRET_DIRECTION = {
-  avenue: '_________',
-  hour: '______'
+// Configuración editable de direcciones finales.
+const CONFIG = {
+  phase1Address: { line1: 'Avenida __________', line2: '____ PM' },
+  phase3Address: { line1: 'Café __________', line2: '____ PM' }
 };
 
-const RIDDLES = [
+const appScene = document.getElementById('scene');
+const ambient = document.getElementById('ambient-audio');
+const success = document.getElementById('success-audio');
+
+const state = JSON.parse(localStorage.getItem('colibriState') || '{"phase":0,"step":0}');
+
+const phases = [
   {
-    phase: 1,
-    text: `Soy pequeño y veloz,\nllevo historias al amanecer,\ny aunque tengo alas,\nmi lugar favorito era tu ventana.`,
-    answer: 'colibri'
+    name: 'ENCUÉNTRAME',
+    riddles: [
+      ['Soy pequeño y veloz, llevo historias al amanecer, y aunque tengo alas, mi lugar favorito era tu ventana.', 'colibri'],
+      ['No era el sol quien iluminaba mis mañanas, eras tú… ¿Qué sentimiento hacía eterno cada encuentro?', 'amor'],
+      ['Cuando me alejé de lo verdadero, seguí luces vacías y efímeras. ¿Qué me hizo perder al colibrí?', 'miedo'],
+      ['Tus historias rompieron los límites de mi mente y mi corazón. ¿Qué me enseñaste a hacer?', 'volar'],
+      ['Aunque el colibrí se fue, algo suyo aún vive dentro de mí. ¿Qué permanece?', 'recuerdos']
+    ]
   },
   {
-    phase: 1,
-    text: `No era el sol quien iluminaba mis mañanas,\neras tú…\n¿Qué sentimiento hacía eterno cada encuentro?`,
-    answer: 'amor'
+    name: 'LAS HISTORIAS QUE NUNCA TE CONTÉ',
+    riddles: [
+      ['¿Qué sentimiento hace que alguien siempre vuelva?', 'amor'],
+      ['¿Qué guardan las personas incluso después de despedirse?', 'recuerdos'],
+      ['¿Qué lugar puede sentirse como hogar sin ser una casa?', 'corazon'],
+      ['¿Qué sigue existiendo aunque no podamos verlo?', 'conexion'],
+      ['¿Qué jamás dejó de hacer el colibrí?', 'volver']
+    ],
+    story: [
+      'El colibrí no entendía por qué el cielo se sentía vacío si aún seguía lleno de estrellas.',
+      'Había conocido muchos jardines… pero ninguno donde quisiera quedarse.',
+      'Hasta que encontró una ventana donde las mañanas se sentían distintas.',
+      'Y aunque una vez se alejó, jamás dejó de regresar en silencio.',
+      'Porque algunas almas, incluso rotas, siguen reconociéndose.'
+    ]
   },
   {
-    phase: 1,
-    text: `Cuando me alejé de lo verdadero,\nseguí luces vacías y efímeras.\n¿Qué me hizo perder al colibrí?`,
-    answer: 'ego'
-  },
-  {
-    phase: 1,
-    text: `Tus historias rompieron los límites\nde mi mente y mi corazón.\n¿Qué me enseñaste a hacer?`,
-    answer: 'volar'
-  },
-  {
-    phase: 1,
-    text: `Aunque el colibrí se fue,\nalgo suyo aún vive dentro de mí.\n¿Qué permanece?`,
-    answer: 'recuerdos'
-  },
-  {
-    phase: 2,
-    text: `No importa cuántas veces el tiempo pase,\nmi corazón siempre vuelve a ti.\n¿Qué nunca cambió?`,
-    answer: 'amor'
-  },
-  {
-    phase: 2,
-    text: `Aunque el miedo me hizo perderte,\njamás logró borrar esto de mí.`,
-    answer: 'sentimientos'
-  },
-  {
-    phase: 2,
-    text: `Fuiste el refugio de mis pensamientos\ny el hogar de mi alma.`,
-    answer: 'corazon'
-  },
-  {
-    phase: 2,
-    text: `No todas las historias terminan cuando alguien se va.\nAlgunas esperan ser retomadas.`,
-    answer: 'destino'
-  },
-  {
-    phase: 2,
-    text: `Si un colibrí regresa a tu ventana,\nquizás nunca dejó de buscarte.`,
-    answer: 'volver'
+    name: 'LA CONFESIÓN',
+    riddles: [
+      ['No importa cuánto intenté distraerme… siempre terminaba pensando en ti.', 'amor'],
+      ['El lugar más bonito del mundo nunca fue un sitio… fue una persona.', 'tu'],
+      ['Aunque pasó el tiempo, hay algo que jamás desapareció.', 'sentimientos'],
+      ['El colibrí siempre supo dónde quería quedarse.', 'contigo'],
+      ['¿Qué verdad escondió el colibrí todo este tiempo?', 'amarte']
+    ]
   }
 ];
 
-const romanticMistakes = [
-  'Casi... intenta de nuevo con el corazón.',
-  'El colibrí susurra que estás muy cerca.',
-  'Respira... recuerda lo que sentías en esa historia.',
-  'Bonito intento, vuelve a escuchar la memoria.'
-];
+const normalize = (t) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+const save = () => localStorage.setItem('colibriState', JSON.stringify(state));
 
-const state = {
-  current: 0,
-  introDone: false,
-  finalDone: false
-};
-
-const els = {
-  introTyping: document.getElementById('intro-typing'),
-  startBtn: document.getElementById('start-journey'),
-  submitBtn: document.getElementById('submit-answer'),
-  answerInput: document.getElementById('riddle-answer'),
-  riddleText: document.getElementById('riddle-text'),
-  feedback: document.getElementById('feedback'),
-  progressBar: document.getElementById('progress-bar'),
-  riddleCounter: document.getElementById('riddle-counter'),
-  phaseTitle: document.getElementById('phase-title'),
-  continuePhase2: document.getElementById('continue-phase2'),
-  restartStory: document.getElementById('restart-story'),
-  resetProgress: document.getElementById('reset-progress'),
-  finalPhrase: document.getElementById('final-phrase'),
-  finalThanks: document.getElementById('final-thanks'),
-  secretAvenue: document.getElementById('secret-avenue'),
-  secretHour: document.getElementById('secret-hour'),
-  musicToggle: document.getElementById('music-toggle'),
-  ambientMusic: document.getElementById('ambient-music'),
-  successSound: document.getElementById('success-sound')
-};
-
-const screens = {
-  intro: document.getElementById('screen-intro'),
-  game: document.getElementById('screen-game'),
-  phase1Reveal: document.getElementById('screen-phase1-reveal'),
-  final: document.getElementById('screen-final')
-};
-
-function normalizeText(value) {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-}
-
-function saveState() {
-  localStorage.setItem('colibri_progress', JSON.stringify(state));
-}
-
-function loadState() {
-  const raw = localStorage.getItem('colibri_progress');
-  if (!raw) return;
-  try {
-    const parsed = JSON.parse(raw);
-    Object.assign(state, parsed);
-  } catch {
-    localStorage.removeItem('colibri_progress');
-  }
-}
-
-function showScreen(target) {
-  Object.values(screens).forEach((screen) => {
-    screen.classList.add('d-none');
-    screen.classList.remove('active-screen');
-  });
-  target.classList.remove('d-none');
-  requestAnimationFrame(() => target.classList.add('active-screen'));
-}
-
-function renderRiddle() {
-  const riddle = RIDDLES[state.current];
-  if (!riddle) return;
-
-  els.phaseTitle.textContent = riddle.phase === 1
-    ? 'Fase 1 — Los 5 acertijos del colibrí'
-    : 'Fase 2 — Los 5 acertijos del corazón';
-
-  els.riddleCounter.textContent = `Acertijo ${state.current + 1}/${RIDDLES.length}`;
-  els.riddleText.textContent = riddle.text;
-  els.answerInput.value = '';
-  els.feedback.textContent = '';
-  els.progressBar.style.width = `${(state.current / RIDDLES.length) * 100}%`;
-}
-
-function typeWriter(element, text, speed = 45, cb) {
-  element.textContent = '';
-  let i = 0;
-  const timer = setInterval(() => {
-    element.textContent += text[i] || '';
-    i += 1;
-    if (i > text.length) {
-      clearInterval(timer);
-      if (cb) cb();
-    }
-  }, speed);
-}
-
-function playSuccess() {
-  els.successSound.currentTime = 0;
-  els.successSound.play().catch(() => {});
-}
-
-function handleAnswer() {
-  const currentRiddle = RIDDLES[state.current];
-  const answer = normalizeText(els.answerInput.value);
-  if (!answer) {
-    els.feedback.textContent = 'Escribe algo bonito antes de continuar.';
-    return;
-  }
-
-  if (answer === normalizeText(currentRiddle.answer)) {
-    playSuccess();
-    els.feedback.textContent = '✨ Correcto... el colibrí sonríe.';
-    state.current += 1;
-    saveState();
-
-    setTimeout(() => {
-      if (state.current === 5) {
-        showPhase1Reveal();
-      } else if (state.current >= RIDDLES.length) {
-        showFinal();
-      } else {
-        showScreen(screens.game);
-        renderRiddle();
-      }
-    }, 700);
-  } else {
-    const msg = romanticMistakes[Math.floor(Math.random() * romanticMistakes.length)];
-    els.feedback.textContent = msg;
-  }
-}
-
-function showPhase1Reveal() {
-  els.progressBar.style.width = '50%';
-  showScreen(screens.phase1Reveal);
-}
-
-function showFinal() {
-  showScreen(screens.final);
-  els.progressBar.style.width = '100%';
-  if (!state.finalDone) {
-    typeWriter(els.finalPhrase, 'Siempre te he amado.', 95, () => {
-      typeWriter(els.finalThanks, 'Gracias por volver a escuchar al colibrí.', 45);
-    });
-    state.finalDone = true;
-    saveState();
-  }
-}
-
-function setupIntro() {
-  const introText = 'Había un colibrí que todas las mañanas llegaba a mi ventana a contarme historias fantásticas…';
-  typeWriter(els.introTyping, introText, 42, () => {
-    state.introDone = true;
-    saveState();
+function typewriter(el, text, speed = 34) {
+  return new Promise((resolve) => {
+    el.textContent = '';
+    let i = 0;
+    const run = () => {
+      if (i <= text.length) { el.textContent = text.slice(0, i++); setTimeout(run, speed); }
+      else resolve();
+    };
+    run();
   });
 }
 
-function setupMusic() {
-  let playing = false;
-  els.musicToggle.addEventListener('click', async () => {
-    if (!playing) {
-      await els.ambientMusic.play().catch(() => {});
-      playing = true;
-      els.musicToggle.innerHTML = '<i class="bi bi-pause-circle"></i> Música';
+function transition(renderFn) {
+  appScene.classList.add('fade-out');
+  setTimeout(() => {
+    renderFn();
+    appScene.classList.remove('fade-out');
+    appScene.classList.add('fade-in');
+  }, 550);
+}
+
+function renderIntro() {
+  appScene.innerHTML = `<div class="glass-card text-center">
+    <h1 class="title mb-3">COLIBRÍ</h1>
+    <p id="intro-text" class="subtitle cursor"></p>
+    <button id="start-btn" class="btn btn-cine mt-3 d-none">Comenzar el viaje</button>
+  </div>`;
+  typewriter(document.getElementById('intro-text'), 'Había un colibrí que todas las mañanas llegaba a mi ventana a contarme historias fantásticas…', 38)
+    .then(() => document.getElementById('start-btn').classList.remove('d-none'));
+
+  document.getElementById('start-btn').onclick = async () => {
+    ambient.volume = 0.45;
+    try { await ambient.play(); } catch (_) {}
+    state.phase = 1; state.step = 0; save();
+    transition(() => renderPhase());
+  };
+}
+
+function renderPhase() {
+  const phaseIndex = state.phase - 1;
+  const phase = phases[phaseIndex];
+  if (!phase) return renderIntro();
+
+  if (state.step >= 5) return renderPhaseFinal(phaseIndex);
+  const [prompt, answer] = phase.riddles[state.step];
+
+  appScene.innerHTML = `<div class="glass-card">
+    <p class="mb-1 text-uppercase small text-info-emphasis">Fase ${state.phase} — ${phase.name}</p>
+    <h2 class="text-romantic">${prompt}</h2>
+    <div class="progress bg-dark-subtle my-3" role="progressbar"><div class="progress-bar" style="width:${(state.step/5)*100}%"></div></div>
+    <div class="input-group mt-3">
+      <span class="input-group-text bg-transparent text-white"><i class="bi bi-feather"></i></span>
+      <input id="answer" class="form-control riddle-input" placeholder="Escribe tu respuesta..." />
+      <button id="check" class="btn btn-cine">Revelar</button>
+    </div>
+    <p id="msg" class="message mt-3"></p>
+    ${phase.story ? '<div id="story" class="mt-3 text-light-emphasis"></div>' : ''}
+  </div>`;
+
+  if (phase.story && state.step > 0) {
+    document.getElementById('story').innerHTML = phase.story.slice(0, state.step).map(s => `<p>✨ ${s}</p>`).join('');
+  }
+
+  document.getElementById('check').onclick = async () => {
+    const value = normalize(document.getElementById('answer').value);
+    if (value === normalize(answer)) {
+      success.currentTime = 0; success.volume = 0.4; try { await success.play(); } catch (_) {}
+      state.step += 1; save();
+      transition(() => renderPhase());
     } else {
-      els.ambientMusic.pause();
-      playing = false;
-      els.musicToggle.innerHTML = '<i class="bi bi-play-circle"></i> Música';
+      document.getElementById('msg').textContent = 'No te preocupes, amor… escucha al corazón y vuelve a intentarlo.';
     }
-  });
+  };
 }
 
-function setupParticles() {
+function renderPhaseFinal(phaseIndex) {
+  if (phaseIndex === 0) {
+    appScene.innerHTML = `<div class="final-block glass-card">
+      <p class="text-romantic">Hay conversaciones que nunca debieron terminar…</p>
+      <p class="mt-4 mb-0">📍 ${CONFIG.phase1Address.line1}</p>
+      <p>🕰️ ${CONFIG.phase1Address.line2}</p>
+      <p class="subtitle">Te esperaré ahí, como antes esperaba tus historias.</p>
+      <button id="next" class="btn btn-cine">Continuar</button>
+    </div>`;
+    document.getElementById('next').onclick = () => { state.phase = 2; state.step = 0; save(); transition(() => renderPhase()); };
+  } else if (phaseIndex === 1) {
+    const text = phases[1].story.join(' ');
+    appScene.innerHTML = `<div class="glass-card final-block">
+      <p id="full-story" class="text-romantic cursor"></p>
+      <p class="mt-4">Hay historias que no terminan…<br>solo esperan el momento correcto.</p>
+      <button id="next" class="btn btn-cine mt-2 d-none">Una última verdad</button>
+    </div>`;
+    typewriter(document.getElementById('full-story'), text, 20).then(() => document.getElementById('next').classList.remove('d-none'));
+    document.getElementById('next').onclick = () => { state.phase = 3; state.step = 0; save(); transition(() => renderPhase()); };
+  } else {
+    appScene.innerHTML = `<div class="glass-card final-block">
+      <p class="text-romantic">Intenté convencerme de que podía seguir sin ti…</p>
+      <p class="text-romantic mt-3">Pero la verdad…</p>
+      <p class="title mt-2" style="font-size: clamp(2rem,6vw,3.4rem);">es que nunca dejé de amarte.</p>
+      <p class="mt-3">Siempre te he amado.</p>
+      <p>Y si todavía existe una pequeña posibilidad…</p>
+      <p class="mt-4 mb-0">📍 ${CONFIG.phase3Address.line1}</p>
+      <p>🕰️ ${CONFIG.phase3Address.line2}</p>
+      <p class="subtitle">Me gustaría comenzar otra historia contigo.</p>
+      <button id="finish" class="btn btn-cine">Fin del viaje</button>
+    </div>`;
+    document.getElementById('finish').onclick = () => {
+      localStorage.removeItem('colibriState');
+      state.phase = 0; state.step = 0;
+      transition(() => renderIntro());
+    };
+  }
+}
+
+function initParticles() {
   const canvas = document.getElementById('particles-canvas');
   const ctx = canvas.getContext('2d');
-  let particles = [];
-
-  function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-
-  function createParticles() {
-    particles = Array.from({ length: Math.min(80, Math.floor(window.innerWidth / 20)) }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 2 + 0.4,
-      v: Math.random() * 0.4 + 0.15,
-      a: Math.random() * 0.5 + 0.2
-    }));
-  }
-
-  function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (const p of particles) {
-      p.y -= p.v;
-      if (p.y < -10) p.y = canvas.height + 10;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,255,${p.a})`;
+  let w, h, stars;
+  const init = () => {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+    stars = Array.from({ length: Math.min(110, Math.floor(w / 12)) }, () => ({ x: Math.random()*w, y: Math.random()*h, r: Math.random()*1.9+.3, v: Math.random()*.25+.03 }));
+  };
+  const draw = () => {
+    ctx.clearRect(0,0,w,h);
+    stars.forEach(s => {
+      s.y -= s.v; if (s.y < -4) s.y = h + 4;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(188, 214, 255, ${0.4 + s.r/3})`;
+      ctx.shadowBlur = 10; ctx.shadowColor = '#91b9ff';
       ctx.fill();
-    }
-    requestAnimationFrame(animate);
-  }
-
-  resize();
-  createParticles();
-  animate();
-  window.addEventListener('resize', () => {
-    resize();
-    createParticles();
-  });
+    });
+    requestAnimationFrame(draw);
+  };
+  window.addEventListener('resize', init);
+  init(); draw();
 }
 
-function init() {
-  loadState();
-  els.secretAvenue.textContent = SECRET_DIRECTION.avenue;
-  els.secretHour.textContent = SECRET_DIRECTION.hour;
-
-  setupParticles();
-  setupMusic();
-
-  els.startBtn.addEventListener('click', () => {
-    showScreen(screens.game);
-    renderRiddle();
-  });
-  els.submitBtn.addEventListener('click', handleAnswer);
-  els.answerInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleAnswer();
-  });
-
-  els.continuePhase2.addEventListener('click', () => {
-    showScreen(screens.game);
-    renderRiddle();
-  });
-
-  els.restartStory.addEventListener('click', () => {
-    localStorage.removeItem('colibri_progress');
-    location.reload();
-  });
-
-  els.resetProgress.addEventListener('click', () => {
-    localStorage.removeItem('colibri_progress');
-    state.current = 0;
-    state.finalDone = false;
-    showScreen(screens.intro);
-    setupIntro();
-  });
-
-  if (state.finalDone || state.current >= RIDDLES.length) {
-    showFinal();
-  } else if (state.current >= 5) {
-    showPhase1Reveal();
-  } else if (state.current > 0) {
-    showScreen(screens.game);
-    renderRiddle();
-  } else {
-    showScreen(screens.intro);
-    setupIntro();
-  }
-}
-
-init();
+initParticles();
+(state.phase ? renderPhase : renderIntro)();
