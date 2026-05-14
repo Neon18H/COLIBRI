@@ -1,0 +1,96 @@
+:root {
+  --bg-1: #050507;
+  --bg-2: #0f1b2f;
+  --bg-3: #361525;
+  --text-main: #f4f1f8;
+  --text-soft: #d8d2df;
+  --accent: #b487ff;
+  --accent-2: #ff8abf;
+  --glass: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.2);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Poppins', sans-serif;
+  color: var(--text-main);
+  background: radial-gradient(circle at 20% 10%, #1e2c4b 0%, transparent 35%),
+    radial-gradient(circle at 80% 90%, #4f1932 0%, transparent 35%),
+    linear-gradient(140deg, var(--bg-1), var(--bg-2), var(--bg-3));
+  overflow-x: hidden;
+}
+
+#particles-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.app-shell { position: relative; z-index: 2; }
+
+.display-title, .section-title {
+  font-family: 'Cormorant Garamond', serif;
+  letter-spacing: 0.03em;
+}
+.display-title { font-size: clamp(2.5rem, 6vw, 4.5rem); }
+.section-title { font-size: clamp(1.6rem, 4vw, 2.5rem); }
+.kicker { letter-spacing: 0.2em; text-transform: uppercase; color: #ffd5e6; font-size: 0.8rem; }
+.lead-text { color: var(--text-soft); line-height: 1.8; min-height: 4rem; }
+
+.glass-card {
+  max-width: 900px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.5rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 35px rgba(0, 0, 0, 0.35), inset 0 0 40px rgba(255, 255, 255, 0.03);
+}
+
+.btn-glow {
+  border: none;
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  box-shadow: 0 8px 25px rgba(181, 136, 255, 0.35);
+  transition: transform 0.35s ease, box-shadow 0.35s ease, filter 0.35s ease;
+}
+.btn-glow:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 12px 30px rgba(255, 138, 191, 0.45);
+  filter: saturate(1.1);
+}
+
+.screen { transition: opacity 0.8s ease, transform 0.8s ease; }
+.d-none { display: none !important; }
+.active-screen { opacity: 1; transform: translateY(0); }
+.fade-out { opacity: 0; transform: translateY(8px); }
+.fade-in-up { animation: fadeUp 1s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px);} to {opacity: 1; transform: translateY(0);} }
+
+.riddle-text { white-space: pre-line; font-size: 1.1rem; line-height: 1.8; }
+.progress-custom { height: 10px; background: rgba(255, 255, 255, 0.15); }
+.progress-bar { background: linear-gradient(90deg, #91bbff, #e595ff); transition: width .5s ease; }
+.riddle-badge { background: rgba(255,255,255,.15)!important; }
+.feedback { min-height: 1.5rem; color: #ffd6ea; }
+.secret-card {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 1rem;
+  color: #fff3fb;
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
+}
+
+.hummingbird {
+  position: fixed; z-index: 1; font-size: 1.3rem; color: rgba(255, 207, 232, 0.7);
+  animation: flutter 8s ease-in-out infinite;
+}
+.hummingbird-1 { top: 20%; left: 4%; }
+.hummingbird-2 { bottom: 22%; right: 5%; animation-delay: 2s; }
+@keyframes flutter {
+  0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); }
+  25% { transform: translateY(-15px) translateX(8px) rotate(-8deg); }
+  50% { transform: translateY(2px) translateX(-4px) rotate(6deg); }
+  75% { transform: translateY(-10px) translateX(7px) rotate(-4deg); }
+}
+
+@media (max-width: 768px) {
+  .glass-card { border-radius: 1rem; }
+  .riddle-text { font-size: 1rem; }
+}
