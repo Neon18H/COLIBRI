@@ -7,6 +7,7 @@ const CONFIG = {
 const appScene = document.getElementById('scene');
 const ambient = document.getElementById('ambient-audio');
 const success = document.getElementById('success-audio');
+const hintAudio = document.getElementById('hint-audio');
 
 const state = JSON.parse(localStorage.getItem('colibriState') || '{"phase":0,"step":0}');
 
@@ -48,6 +49,36 @@ const phases = [
       ['¿Qué verdad escondió el colibrí todo este tiempo?', 'amarte']
     ]
   }
+];
+
+const hintsByPhase = [
+  [
+    'Sus alas son rápidas, pero siempre encontraba calma en tu ventana.',
+    'No era el amanecer… era lo que sentías al verla.',
+    'A veces no perdemos a alguien por falta de amor, sino por temor.',
+    'El colibrí te enseñó a ir más allá de tus propios límites.',
+    'Aunque alguien se vaya, ciertas cosas nunca abandonan el corazón.'
+  ],
+  [
+    'Es lo único que siempre encuentra el camino de regreso.',
+    'Viven incluso después de las despedidas.',
+    'No tiene puertas, pero puede convertirse en hogar.',
+    'No necesitas verla para sentir que sigue existiendo.',
+    'El colibrí jamás dejó de intentarlo.'
+  ],
+  [
+    'Era imposible dejar de pensar en ella por esto.',
+    'El lugar más bonito no era un lugar.',
+    'El tiempo no logró borrarlos.',
+    'El colibrí finalmente entendió dónde quería quedarse.',
+    'La verdad más difícil de ocultar.'
+  ]
+];
+
+const starPositions = [
+  ['9%','17%'],['84%','19%'],['12%','72%'],['79%','69%'],['48%','13%'],
+  ['18%','26%'],['83%','49%'],['11%','58%'],['72%','22%'],['56%','77%'],
+  ['15%','39%'],['76%','15%'],['18%','79%'],['86%','61%'],['63%','18%']
 ];
 
 const normalize = (t) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
@@ -99,7 +130,11 @@ function renderPhase() {
   if (state.step >= 5) return renderPhaseFinal(phaseIndex);
   const [prompt, answer] = phase.riddles[state.step];
 
-  appScene.innerHTML = `<div class="glass-card">
+  const hintText = hintsByPhase[phaseIndex][state.step];
+  const starIndex = (phaseIndex * 5) + state.step;
+  const [starLeft, starTop] = starPositions[starIndex];
+
+  appScene.innerHTML = `<div class="glass-card position-relative">
     <p class="mb-1 text-uppercase small text-info-emphasis">Fase ${state.phase} — ${phase.name}</p>
     <h2 class="text-romantic">${prompt}</h2>
     <div class="progress bg-dark-subtle my-3" role="progressbar"><div class="progress-bar" style="width:${(state.step/5)*100}%"></div></div>
@@ -110,6 +145,17 @@ function renderPhase() {
     </div>
     <p id="msg" class="message mt-3"></p>
     ${phase.story ? '<div id="story" class="mt-3 text-light-emphasis"></div>' : ''}
+    <button
+      id="floating-star"
+      class="floating-star glow-effect"
+      type="button"
+      aria-label="Mostrar pista romántica"
+      style="left:${starLeft}; top:${starTop};"
+    >
+      ✨
+      <span class="star-particles" aria-hidden="true"></span>
+    </button>
+    <div id="hint-popup" class="hint-popup" role="status" aria-live="polite">${hintText}</div>
   </div>`;
 
   if (phase.story && state.step > 0) {
@@ -125,6 +171,22 @@ function renderPhase() {
     } else {
       document.getElementById('msg').textContent = 'No te preocupes, amor… escucha al corazón y vuelve a intentarlo.';
     }
+  };
+
+  const star = document.getElementById('floating-star');
+  const hintPopup = document.getElementById('hint-popup');
+  star.onclick = async () => {
+    star.disabled = true;
+    star.classList.add('used');
+    hintPopup.classList.add('visible');
+    hintAudio.currentTime = 0;
+    hintAudio.volume = 0.28;
+    try { await hintAudio.play(); } catch (_) {}
+
+    setTimeout(() => {
+      hintPopup.classList.remove('visible');
+      hintPopup.classList.add('hide');
+    }, 5000);
   };
 }
 
